@@ -17,8 +17,8 @@ public class Day_04 : BaseDay
         var result = 0;
         foreach (var card in _input) {
             var splitted = card.Split([':', '|']);
-            var winning = splitted[1].Split(' ').Where(s => !string.IsNullOrEmpty(s));
-            var owned = splitted[2].Split(' ').Where(s => !string.IsNullOrEmpty(s));
+            var winning = splitted[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var owned = splitted[2].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             var winningNumbers = owned.Count(winning.Contains);
             if (winningNumbers > 0)
@@ -37,8 +37,8 @@ public class Day_04 : BaseDay
             var card = _input[i];
 
             var splitted = card.Split([':', '|']);
-            var winning = splitted[1].Split(' ').Where(s => !string.IsNullOrEmpty(s));
-            var owned = splitted[2].Split(' ').Where(s => !string.IsNullOrEmpty(s));
+            var winning = splitted[1].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var owned = splitted[2].Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
             var winningNumbers = owned.Count(winning.Contains);
 
