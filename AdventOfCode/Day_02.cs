@@ -25,7 +25,7 @@ public partial class Day_02 : BaseDay
 
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Part 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
     public int Solution_1() {
         const int maxRed = 12;
@@ -40,6 +40,26 @@ public partial class Day_02 : BaseDay
                 s.Blue <= maxBlue
             ))
             result += game.Id;
+        }
+
+        return result;
+    }
+
+    public int Solution_2() {
+        var result = 0;
+        foreach (var game in _input) {
+            int maxRed = 0, maxGreen = 0, maxBlue = 0;;
+
+            foreach(var subset in game.CubesSubsets) {
+                if (subset.Red > maxRed)
+                    maxRed = subset.Red;
+                if (subset.Green > maxGreen)
+                    maxGreen = subset.Green;
+                if (subset.Blue > maxBlue)
+                    maxBlue = subset.Blue;
+            }
+
+            result += maxRed * maxGreen * maxBlue;
         }
 
         return result;
