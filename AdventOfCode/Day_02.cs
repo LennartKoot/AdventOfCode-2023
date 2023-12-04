@@ -23,6 +23,28 @@ public partial class Day_02 : BaseDay
         _input = ParseInput();
     }
 
+    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
+
+    public override ValueTask<string> Solve_2() => new($"Part 2");
+
+    public int Solution_1() {
+        const int maxRed = 12;
+        const int maxGreen = 13;
+        const int maxBlue = 14;
+
+        var result = 0;
+        foreach (var game in _input) {
+            if (game.CubesSubsets.All(s =>
+                s.Red <= maxRed &&
+                s.Green <= maxGreen &&
+                s.Blue <= maxBlue
+            ))
+            result += game.Id;
+        }
+
+        return result;
+    }
+
     private List<Game> ParseInput() {
 
         var result = new List<Game>();
@@ -59,8 +81,4 @@ public partial class Day_02 : BaseDay
 
         return result;
     }
-
-    public override ValueTask<string> Solve_1() => new($"Part 1");
-
-    public override ValueTask<string> Solve_2() => new($"Part 2");
 }
