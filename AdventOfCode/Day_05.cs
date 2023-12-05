@@ -14,8 +14,24 @@ public class Day_05 : BaseDay
         ParseInput();
     }
 
-    public override ValueTask<string> Solve_1() => new($"Part 1");
+    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
     public override ValueTask<string> Solve_2() => new($"Part 2");
+
+    public long Solution_1() {
+        return _seeds.Select(GetLocation).Min();
+    }
+
+    private long GetLocation(long seed) {
+        var source = seed;
+        for (int i = 0; i < 7; i++) {
+            var range = _maps[i].Find(r => r.SourceStart <= source && r.SourceStart + r.Length >= source);
+            if (range != null) {
+                var indexInRange = source - range.SourceStart;
+                source = range.DestinationStart + indexInRange;
+            }
+        }
+        return source;
+    }
 
     private void ParseInput() {
         var lines = File.ReadAllLines(InputFilePath);
