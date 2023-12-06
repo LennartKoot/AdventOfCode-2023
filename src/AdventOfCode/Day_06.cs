@@ -11,11 +11,11 @@ public class Day_06 : BaseDay
 
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new("Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
-    record Game(int Time, int Record);
+    record Game(long Time, long Record);
 
-    public int Solution_1() {
+    public long Solution_1() {
         var times = _input[0]
             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Skip(1)
@@ -37,9 +37,16 @@ public class Day_06 : BaseDay
             .Aggregate((a, b) => a * b);
     }
 
-    private int CountDistancesPastRecord(Game game) {
-        var count = 0;
-        for (int i = 1; i < game.Time; i++) {
+    public long Solution_2() {
+        var time = ConvertDigitsToNumber(_input[0].Split(':')[1]);
+        var record = ConvertDigitsToNumber(_input[1].Split(':')[1]);
+
+        return CountDistancesPastRecord(new(time, record));
+    }
+
+    private long CountDistancesPastRecord(Game game) {
+        long count = 0;
+        for (long i = 1; i < game.Time; i++) {
             var distance = i * (game.Time - i);
             if (distance > game.Record)
                 count++;
@@ -47,5 +54,9 @@ public class Day_06 : BaseDay
                 break;
         }
         return count;
+    }
+
+    private long ConvertDigitsToNumber(string digits) {
+        return long.Parse(digits.Replace(" ", string.Empty));
     }
 }
