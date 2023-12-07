@@ -148,13 +148,13 @@ public class Hand
         var counts = cardCounts.Values.OrderDescending().ToArray();
         return counts switch
         {
-        [5] => HandType.FiveOfAKind,
-        [4, 1] => HandType.FourOfAKind,
-        [3, 2] => HandType.FullHouse,
-        [3, ..] => HandType.ThreeOfAKind,
-        [2, 2, ..] => HandType.TwoPair,
-        [2, ..] => HandType.OnePair,
-            _ => HandType.HighCard,
+            [5]         => HandType.FiveOfAKind,
+            [4, 1]      => HandType.FourOfAKind,
+            [3, 2]      => HandType.FullHouse,
+            [3, ..]     => HandType.ThreeOfAKind,
+            [2, 2, ..]  => HandType.TwoPair,
+            [2, ..]     => HandType.OnePair,
+            _           => HandType.HighCard,
         };
     }
 }
