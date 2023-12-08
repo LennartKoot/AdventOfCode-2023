@@ -47,41 +47,37 @@ public class Day_08 : BaseDay
             .Where(kvp => kvp.Key[^1] == 'A')
             .Select(kvp => kvp.Value);
 
-        var cycles = nodes.Select(GetStepsAndCycle).ToArray();
-
         /* Cycle Steps - Total Steps - Index into new cycle = 0
          * => Cycles exatly in Total Steps
          * => Find LCM of all Total Steps
          */
-        int[] totalSteps = cycles.Select(tup => tup.Item1).ToArray();
-
-        return LCM(totalSteps);
+        var cycles = nodes.Select(GetPathLengthToTarget).ToArray();
+        return LCM(cycles);
     }
 
-    private static long LCM(int[] values) {
-        // https://www.wolframalpha.com/input?i=lcm%2820569%2C18727%2C14429%2C13201%2C18113%2C22411%29
-        return 10921547990923;
+    private static long LCM(long[] values) {
+        static long LCM_Internal(long a, long b) {
+            var div = b / GCD(a, b);
+            return a * div;
+        }
+
+        return values.Aggregate(LCM_Internal);
     }
 
-    private (int, int, int) GetStepsAndCycle(Node start) {
-        Dictionary<string, List<int>> visited = [];
+    private static long GCD(long a, long b) {
+        while (b != 0) {
+            var t = b;
+            b = a % b;
+            a = t;
+        }
+        return a;
+    }
 
+    private long GetPathLengthToTarget(Node start) {
         var steps = 0;
-        var cycle = 0;
         var instructionIndex = 0;
         var node = start;
-        while(true) {
-            if (node.Label[^1] == 'Z')
-                steps = cycle;
-
-            if (visited.TryGetValue(node.Label, out var instructionIndices))
-                if (instructionIndices.Contains(instructionIndex))
-                    return (steps, cycle, instructionIndex);
-                else
-                    instructionIndices.Add(instructionIndex);
-            else
-                visited.Add(node.Label, [instructionIndex]);
-
+        while(node.Label[^1] != 'Z') {
             var instruction = _instructions[instructionIndex];
             if (instruction == 'L')
                 node = _nodes[node.Left];
@@ -89,8 +85,10 @@ public class Day_08 : BaseDay
                 node = _nodes[node.Right];
 
             instructionIndex = (instructionIndex + 1) % _instructions.Length;
-            ++cycle;
+            ++steps;
         }
+
+        return steps;
     }
 
     // Used to analyze paths for part 2. Found out they cycle after finding target.
