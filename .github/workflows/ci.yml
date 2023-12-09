@@ -11,23 +11,35 @@ on:
 
 env:
   DOTNET_VERSION: 8.0.x
+  AOC_CLI_VERSION: 0.12.0
 
 jobs:
-  build:
+  test:
     permissions:
       contents: read
       actions: read
       checks: write
 
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-      fail-fast: false
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install aoc-cli
+      run: |
+        wget -nv https://github.com/scarvalhojr/aoc-cli/releases/download/${{ env.AOC_CLI_VERSION}}/aoc-cli-${{ env.AOC_CLI_VERSION}}-x86_64-unknown-linux-musl.tar.gz
+        tar -xzvf aoc-cli-${{ env.AOC_CLI_VERSION}}-x86_64-unknown-linux-musl.tar.gz
+        echo "${PWD}/aoc-cli-${{ env.AOC_CLI_VERSION}}-x86_64-unknown-linux-musl/" >> $GITHUB_PATH
+
+    - name: Download puzzle input
+      run: |
+        mkdir -p src/AdventOfCode/Inputs
+        for i in $(seq -w 25);do
+            aoc download -y 2023 -d $i -I -i src/AdventOfCode/Inputs/$i.txt
+        done
+      env:
+        ADVENT_OF_CODE_SESSION: ${{ secrets.ADVENT_OF_CODE_SESSION }}
+      continue-on-error: true
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
@@ -44,7 +56,7 @@ jobs:
       uses: dorny/test-reporter@v1.7.0
       if: success() || failure()
       with:
-        name: NUnit Tests (${{ matrix.os }})
+        name: NUnit Tests
         path: tests/AdventOfCode.Test/TestResults/results.trx
         reporter: dotnet-trx
 
@@ -53,6 +65,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install aoc-cli
+      run: |
+        wget -nv https://github.com/scarvalhojr/aoc-cli/releases/download/${{ env.AOC_CLI_VERSION}}/aoc-cli-${{ env.AOC_CLI_VERSION}}-x86_64-unknown-linux-musl.tar.gz
+        tar -xzvf aoc-cli-${{ env.AOC_CLI_VERSION}}-x86_64-unknown-linux-musl.tar.gz
+        echo "${PWD}/aoc-cli-${{ env.AOC_CLI_VERSION}}-x86_64-unknown-linux-musl/" >> $GITHUB_PATH
+
+    - name: Download puzzle input
+      run: |
+        mkdir -p src/AdventOfCode/Inputs
+        for i in $(seq -w 25);do
+            aoc download -y 2023 -d $i -I -i src/AdventOfCode/Inputs/$i.txt
+        done
+      env:
+        ADVENT_OF_CODE_SESSION: ${{ secrets.ADVENT_OF_CODE_SESSION }}
+      continue-on-error: true
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3

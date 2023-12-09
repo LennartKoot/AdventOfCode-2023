@@ -1,4 +1,22 @@
-# AdventOfCode.Template
+# AdventOfCode 2023
+
+## Inputs
+
+The inputs for are expected in `src/AdventOfCode/Inputs/<DD>.txt`  
+You can use [`aoc-cli`](https://github.com/scarvalhojr/aoc-cli) for this:
+
+```bash
+mkdir -p src/AdventOfCode/Inputs
+for i in $(seq -w 25);do
+    aoc download -y 2023 -d $i -I -i src/AdventOfCode/Inputs/$i.txt
+done
+```
+
+## CI/CD
+
+The pipeline will use [`aoc-cli`](https://github.com/scarvalhojr/aoc-cli) to download the necessary input files. For this to work, a session cookie has to be set (and somethimes renewed). This session is read from a GitHub secret `ADVENT_OF_CODE_SESSION`. Once this is set to your session cookie, which you can find in your local browser storage when logged in on [AdventOfCode](https://adventofcode.com).
+
+## AdventOfCode.Template
 
 ![CI](https://github.com/eduherminio/AdventOfCode.Template/workflows/CI/badge.svg)
 
@@ -27,7 +45,7 @@ Output example:
 
 ![aochelper](https://user-images.githubusercontent.com/11148519/142051856-16d9d5bf-885c-44cd-94ae-6f678bcbc04f.gif)
 
-## Basic usage
+### Basic usage
 
 - Create one class per advent day, following `DayXX` or `Day_XX` naming convention and implementing `AoCHelper.BaseDay`.
 - Place input files under `Inputs/` dir, following `XX.txt` convention.
@@ -62,6 +80,7 @@ Providing a **custom `Action<SolverConfiguration>`** to any of those methods ([a
     ```
     solves all the days providing a custom configuration.
 
-## Advanced usage
+### Advanced usage
 
 Check [AoCHelper README file](https://github.com/eduherminio/AoCHelper#advanced-usage) for detailed information about how to override the default file naming and location conventions of your problem classes and input files.
+
