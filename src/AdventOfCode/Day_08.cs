@@ -1,6 +1,4 @@
-﻿using System.Windows.Markup;
-
-namespace AdventOfCode;
+﻿namespace AdventOfCode;
 
 public class Day_08 : BaseDay
 {
