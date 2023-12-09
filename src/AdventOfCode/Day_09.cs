@@ -13,7 +13,7 @@ public class Day_09 : BaseDay
 
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
     public long Solution_1() {
         long result = 0;
@@ -30,6 +30,35 @@ public class Day_09 : BaseDay
 
             for(; currentSequence >= 0; currentSequence--)
                 result += (int)sequences[currentSequence][^1];
+        }
+
+        return result;
+    }
+
+    public long Solution_2() {
+        long result = 0;
+        foreach (var report in _input) {
+            var numbers = report.Split(' ').Select(n => (int?)int.Parse(n)).ToArray();
+            List<int?[]> sequences = [numbers];
+
+            var currentSequence = 0;
+            while (sequences[currentSequence].Any(n => n != 0)) {
+                var length = sequences[currentSequence].Length - 1;
+                sequences.Add(new int?[length]);
+                currentSequence++;
+                DetermineNumberInSequence(sequences, currentSequence, length);
+
+                if (sequences[currentSequence].Any(n => n != 0 && n != null))
+                    continue;
+                else
+                    for (int i = 1; i <= length; i++)
+                        DetermineNumberInSequence(sequences, currentSequence, i);
+            }
+
+            var newLeftValue = 0;
+            for(currentSequence--; currentSequence >= 0; currentSequence--)
+                newLeftValue = (int)sequences[currentSequence][0] - newLeftValue;
+            result += newLeftValue;
         }
 
         return result;
