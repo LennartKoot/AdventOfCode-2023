@@ -5,27 +5,76 @@ namespace AdventOfCode;
 public class Day_10 : BaseDay
 {
     private readonly char[][] _input;
+    private readonly (int, int) _start;
+    private readonly Direction _startDirection;
 
     public Day_10()
     {
         _input = File.ReadLines(InputFilePath).Select(s => s.ToCharArray()).ToArray();
-    }
-
-    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
-
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
-
-    public int Solution_1() {
-        (int, int) start = (-1, -1);
         var max_x = _input[0].Length;
         var max_y = _input.Length;
         for (int y = 0; y < max_y; y++)
             for (int x = 0; x < max_x; x++)
                 if (_input[y][x] == 'S')
-                    start = (x, y); // TODO: Find start while parsing input
+                    _start = (x, y);
 
-        var loop = FindLoop(_input, start);
+        var (startPipe, startDirction) = DetermineStartPipe(_input, _start);
+        var (startX, startY) = _start;
+        _input[startY][startX] = startPipe;
+        _startDirection = startDirction;
+    }
+
+    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
+
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
+
+    public int Solution_1() {
+        var loop = FindLoop();
         return loop.Count / 2;
+    }
+
+    public int Solution_2() {
+        var loop = FindLoop()
+            .Select(n => (n.Item1, n.Item2))
+            .ToHashSet();
+
+        var result = 0;
+
+        var max_x = _input[0].Length;
+        for (var y = 0; y < _input.Length; y++) {
+            bool inside = false;
+            var lastPipe = '|';
+            for (var x = 0; x < _input[0].Length; x++) {
+                if (!inside && loop.Contains((x, y))) {
+                    var pipe = _input[y][x];
+                    // Treat F-J and L-7 as one |
+                    if (pipe == '|' ||
+                        (pipe == '7' && lastPipe == 'L') ||
+                        (pipe == 'J' && lastPipe == 'F')
+                    )
+                        inside = true;
+                    if (pipe != '-')
+                        lastPipe = pipe;
+                    continue;
+                }
+                if (inside && loop.Contains((x, y))) {
+                    var pipe = _input[y][x];
+                    // Treat F-J and L-7 as one |
+                    if (pipe == '|' ||
+                        (pipe == '7' && lastPipe == 'L') ||
+                        (pipe == 'J' && lastPipe == 'F')
+                    )
+                        inside = false;
+                    if (pipe != '-')
+                        lastPipe = pipe;
+                    continue;
+                }
+                if (inside)
+                    ++result;
+            }
+        }
+
+        return result;
     }
 
     enum Direction {
@@ -35,34 +84,31 @@ public class Day_10 : BaseDay
         West,
     }
 
-    private static List<(int, int, Direction)> FindLoop(char[][] input, (int, int) start) {
-        var (startPipe, startDirection) = DetermineStartPipe(input, start);
-        var (startX, startY) = start;
-        input[startY][startX] = startPipe;
-
-        List<(int, int, Direction)> loop = [(startX, startY, startDirection)];
+    private List<(int, int, Direction)> FindLoop() {
+        var (startX, startY) = _start;
+        List<(int, int, Direction)> loop = [(startX, startY, _startDirection)];
 
         var startFound = false;
         while (!startFound) {
             AddNextNode(loop[^1]);
             var (x, y, _) = loop[^1];
-            startFound = (x, y) == start;
+            startFound = (x, y) == _start;
         }
 
         void AddNextNode((int, int, Direction) current) {
             var (x, y, nextDirection) = current;
             switch (nextDirection) {
                 case Direction.North:
-                    loop.Add((x, y - 1, NextDirection(input[y - 1][x], Direction.South)));
+                    loop.Add((x, y - 1, NextDirection(_input[y - 1][x], Direction.South)));
                     break;
                 case Direction.South:
-                    loop.Add((x, y + 1, NextDirection(input[y + 1][x], Direction.North)));
+                    loop.Add((x, y + 1, NextDirection(_input[y + 1][x], Direction.North)));
                     break;
                 case Direction.East:
-                    loop.Add((x + 1, y, NextDirection(input[y][x + 1], Direction.West)));
+                    loop.Add((x + 1, y, NextDirection(_input[y][x + 1], Direction.West)));
                     break;
                 case Direction.West:
-                    loop.Add((x - 1, y, NextDirection(input[y][x - 1], Direction.East)));
+                    loop.Add((x - 1, y, NextDirection(_input[y][x - 1], Direction.East)));
                     break;
             }
         }
