@@ -4,9 +4,17 @@ public class Day_11 : BaseDay
 {
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
-    public int Solution_1() {
+    public long Solution_1() {
+        return CalculateResult(1);
+    }
+
+    public long Solution_2() {
+        return CalculateResult(1_000_000 - 1);
+    }
+
+    private long CalculateResult(int expansion) {
         var galaxies = new List<(int, int)>();
         var lines = File.ReadLines(InputFilePath).ToArray();
         var y = 0;
@@ -31,15 +39,15 @@ public class Day_11 : BaseDay
             if (!galaxies.Any(g => g.Item2 == i))
                 emptyRows.Add(i);
 
-        var result = 0;
+        long result = 0;
         for (int i = 0; i < galaxies.Count; i++)
             for (int j = i + 1; j < galaxies.Count; j++) {
-                var (galaxyX, galaxyY) = galaxies[i];
-                var (pairX, pairY) = galaxies[j];
-                galaxyX += emptyColumns.Count(c => c < galaxyX);
-                galaxyY += emptyRows.Count(r => r < galaxyY);
-                pairX += emptyColumns.Count(c => c < pairX);
-                pairY += emptyRows.Count(r => r < pairY);
+                (long galaxyX, long galaxyY) = galaxies[i];
+                (long pairX, long pairY) = galaxies[j];
+                galaxyX += emptyColumns.Count(c => c < galaxyX) * expansion;
+                galaxyY += emptyRows.Count(r => r < galaxyY) * expansion;
+                pairX += emptyColumns.Count(c => c < pairX) * expansion;
+                pairY += emptyRows.Count(r => r < pairY) * expansion;
 
                 result += Math.Abs(galaxyX - pairX) + Math.Abs(galaxyY - pairY);
             }
