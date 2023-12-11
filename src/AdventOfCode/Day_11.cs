@@ -15,7 +15,7 @@ public class Day_11 : BaseDay
     }
 
     private long CalculateResult(int expansion) {
-        var galaxies = new List<(int, int)>();
+        var galaxies = new List<(long, long)>();
         var lines = File.ReadLines(InputFilePath).ToArray();
         var y = 0;
         foreach (var line in lines) {
@@ -39,16 +39,18 @@ public class Day_11 : BaseDay
             if (!galaxies.Any(g => g.Item2 == i))
                 emptyRows.Add(i);
 
+        for (int i = 0; i < galaxies.Count; i++) {
+            (long galaxyX, long galaxyY) = galaxies[i];
+            galaxyX += emptyColumns.Count(c => c < galaxyX) * expansion;
+            galaxyY += emptyRows.Count(r => r < galaxyY) * expansion;
+            galaxies[i] = (galaxyX, galaxyY);
+        }
+
         long result = 0;
         for (int i = 0; i < galaxies.Count; i++)
             for (int j = i + 1; j < galaxies.Count; j++) {
                 (long galaxyX, long galaxyY) = galaxies[i];
                 (long pairX, long pairY) = galaxies[j];
-                galaxyX += emptyColumns.Count(c => c < galaxyX) * expansion;
-                galaxyY += emptyRows.Count(r => r < galaxyY) * expansion;
-                pairX += emptyColumns.Count(c => c < pairX) * expansion;
-                pairY += emptyRows.Count(r => r < pairY) * expansion;
-
                 result += Math.Abs(galaxyX - pairX) + Math.Abs(galaxyY - pairY);
             }
 
