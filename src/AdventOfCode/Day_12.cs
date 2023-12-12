@@ -19,12 +19,12 @@ public class Day_12 : BaseDay
 
     private long Solve(int repeat) {
         long result = 0;
-        foreach (var line in _input) {
+        Parallel.ForEach(_input, (line) => {
             var parts = line.Split(' ');
             var springs = Unfold(parts[0], '?', repeat);
             var numbers = Unfold(parts[1], ',', repeat).Split(',').Select(int.Parse);
-            result += GetPossibleArrangements(springs, ImmutableStack.CreateRange(numbers.Reverse()), new Cache());
-        }
+            Interlocked.Add(ref result, GetPossibleArrangements(springs, ImmutableStack.CreateRange(numbers.Reverse()), new Cache()));
+        });
         return result;
     }
 
