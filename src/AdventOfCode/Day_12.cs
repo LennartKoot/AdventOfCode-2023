@@ -13,27 +13,16 @@ public class Day_12 : BaseDay
         _input = File.ReadAllLines(InputFilePath);
     }
 
-    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
+    public override ValueTask<string> Solve_1() => new($"{Solve(1)}");
 
-    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
+    public override ValueTask<string> Solve_2() => new($"{Solve(5)}");
 
-    public long Solution_1() {
+    private long Solve(int repeat) {
         long result = 0;
         foreach (var line in _input) {
             var parts = line.Split(' ');
-            var springs = parts[0];
-            var numbers = parts[1].Split(',').Select(int.Parse);
-            result += GetPossibleArrangements(springs, ImmutableStack.CreateRange(numbers.Reverse()), new Cache());
-        }
-        return result;
-    }
-
-     public long Solution_2() {
-        long result = 0;
-        foreach (var line in _input) {
-            var parts = line.Split(' ');
-            var springs = Unfold(parts[0], '?', 5);
-            var numbers = Unfold(parts[1], ',', 5).Split(',').Select(int.Parse);
+            var springs = Unfold(parts[0], '?', repeat);
+            var numbers = Unfold(parts[1], ',', repeat).Split(',').Select(int.Parse);
             result += GetPossibleArrangements(springs, ImmutableStack.CreateRange(numbers.Reverse()), new Cache());
         }
         return result;
