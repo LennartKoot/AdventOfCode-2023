@@ -15,7 +15,7 @@ public class Day_12 : BaseDay
 
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
     public long Solution_1() {
         long result = 0;
@@ -26,6 +26,21 @@ public class Day_12 : BaseDay
             result += GetPossibleArrangements(springs, ImmutableStack.CreateRange(numbers.Reverse()), new Cache());
         }
         return result;
+    }
+
+     public long Solution_2() {
+        long result = 0;
+        foreach (var line in _input) {
+            var parts = line.Split(' ');
+            var springs = Unfold(parts[0], '?', 5);
+            var numbers = Unfold(parts[1], ',', 5).Split(',').Select(int.Parse);
+            result += GetPossibleArrangements(springs, ImmutableStack.CreateRange(numbers.Reverse()), new Cache());
+        }
+        return result;
+    }
+
+    private static string Unfold(string input, char seperator, int repeat) {
+        return string.Join(seperator, Enumerable.Repeat(input, repeat));
     }
 
     private static long GetPossibleArrangements(string springs, Stack configuration, Cache cache) {
