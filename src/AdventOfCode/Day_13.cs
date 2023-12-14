@@ -23,39 +23,41 @@ public class Day_13 : BaseDay
         }
     }
 
-    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
+    public override ValueTask<string> Solve_1() => new($"{Solve(0)}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solve(1)}");
 
-    public int Solution_1() {
+    private int Solve(int smudges) {
         var result = 0;
         foreach (var pattern in _patterns) {
             int[] rows = pattern.Select(FromBinaryToInt).ToArray();
             int[] cols = Transpose(pattern).Select(FromBinaryToInt).ToArray();
 
-            result += 100 * FindSymmetryIndex(rows);
-            result += FindSymmetryIndex(cols);
+            result += 100 * FindSymmetryIndex(rows, smudges);
+            result += FindSymmetryIndex(cols, smudges);
         }
 
         return result;
     }
 
-    private static int FindSymmetryIndex(int[] lines) {
+    private static int FindSymmetryIndex(int[] lines, int smudges) {
         int i = 0;
         for (; i < lines.Length - 1; i++) {
             var isSymmetrical = true;
+            var smudgesLeft = smudges;
             for (
                 int left = i, right = i + 1;
                 left >= 0 && right < lines.Length;
                 left--, right++
             ) {
-                if (lines[left] != lines[right]) {
+                smudgesLeft -= CountDifferentBits(lines[left], lines[right]);
+                if (smudgesLeft < 0) {
                     isSymmetrical = false;
                     break;
                 }
             }
 
-            if (isSymmetrical)
+            if (isSymmetrical && smudgesLeft == 0)
                 return i + 1;
         }
 
@@ -80,5 +82,18 @@ public class Day_13 : BaseDay
 
     private static int FromBinaryToInt(char[] binary) {
         return int.Parse(binary, NumberStyles.BinaryNumber);
+    }
+
+    private static int CountDifferentBits(int a, int b) {
+        int result = 0;
+
+        int c = a ^ b;
+        while (c > 0) {
+            if ((c & 1) == 1)
+                result++;
+            c >>= 1;
+        }
+
+        return result;
     }
 }
