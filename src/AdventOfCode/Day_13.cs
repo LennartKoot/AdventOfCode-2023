@@ -31,9 +31,13 @@ public class Day_13 : BaseDay
         var result = 0;
         foreach (var pattern in _patterns) {
             int[] rows = pattern.Select(FromBinaryToInt).ToArray();
-            int[] cols = Transpose(pattern).Select(FromBinaryToInt).ToArray();
+            var rowResult = FindSymmetryIndex(rows, smudges);
+            if (rowResult > 0) {
+                result += 100 * rowResult;
+                continue;
+            }
 
-            result += 100 * FindSymmetryIndex(rows, smudges);
+            int[] cols = Transpose(pattern).Select(FromBinaryToInt).ToArray();
             result += FindSymmetryIndex(cols, smudges);
         }
 
