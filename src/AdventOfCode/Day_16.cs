@@ -1,4 +1,6 @@
-﻿namespace AdventOfCode;
+﻿using System.Collections.Concurrent;
+
+namespace AdventOfCode;
 
 #nullable enable
 
@@ -16,7 +18,7 @@ public class Day_16 : BaseDay
 
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
     enum Direction : int {
         North = 0,
@@ -37,6 +39,36 @@ public class Day_16 : BaseDay
         MoveBeam(_input, visited, energized, startPosition, startDirection);
 
         return energized.Count;
+    }
+
+    public int Solution_2() {
+        var max_x = _input[0].Length;
+        var max_y = _input.Length;
+
+        var startPositions = new List<Position>();
+        for (int x = 0; x < max_x; x++) {
+            startPositions.Add(new(x, 0));
+            startPositions.Add(new(x, max_y - 1));
+        }
+
+        for (int y = 1; y < max_y - 1; y++) {
+            startPositions.Add(new(0, y));
+            startPositions.Add(new(max_x - 1, y));
+        }
+
+        var results = new ConcurrentBag<int>();
+        Parallel.ForEach(startPositions, start => {
+            foreach (var direction in new Direction[] { Direction.North, Direction.East, Direction.South, Direction.West }) {
+                var visited = new HashSet<(Position, Direction)>();
+                var energized = new HashSet<Position>();
+                var grid = _input.Select(a => a.ToArray()).ToArray();
+
+                MoveBeam(grid, visited, energized, start, direction);
+                results.Add(energized.Count);
+            }
+        });
+
+        return results.Max();
     }
 
     private static void MoveBeam(char[][] grid, HashSet<(Position, Direction)> visited, HashSet<Position> energized,
