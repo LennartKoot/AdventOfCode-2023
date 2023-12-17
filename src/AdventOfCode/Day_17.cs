@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using Microsoft.VisualBasic;
 
 namespace AdventOfCode;
 
@@ -15,20 +14,20 @@ public class Day_17 : BaseDay
             .ToArray();
     }
 
-    public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
+    public override ValueTask<string> Solve_1() => new($"{Solve(1, 3)}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solve(4, 10)}");
 
-    public int Solution_1() {
+    public int Solve(int minSteps, int maxSteps) {
         // Direction does not matter. Steps and HeatLoss must start at 0.
         var source = new Vertex(0, 0, 0, Direction.East, 0);
         // HeatLoss, Direction and StepsInDirection do not matter.
         var target = new Vertex(_grid[0].Length - 1, _grid.Length - 1, 0, Direction.East, 0);
 
-        IEnumerable<Vertex> fGetNeighbours(Vertex vertex) => GetNeighbours(vertex, 3);
-        var (dist, prev) = Dijkstra(fGetNeighbours, source, target);
+        IEnumerable<Vertex> fGetNeighbours(Vertex vertex) => GetNeighbours(vertex, minSteps, maxSteps);
+        var (dist, prev) = Dijkstra(fGetNeighbours, source);
 
-        var path = GetShortestPath(prev, source, target);
+        var path = GetShortestPath(prev, dist, target);
         return path.Sum(v => v.HeatLoss);
     }
 
@@ -42,12 +41,20 @@ public class Day_17 : BaseDay
     [DebuggerDisplay("({X}, {Y}) -> {StepsInDirection} {Direction} | {HeatLoss}")]
     record Vertex(int X, int Y, int HeatLoss, Direction Direction, int StepsInDirection);
 
-    private IEnumerable<Vertex> GetNeighbours(Vertex source, int maxStepsInDirection) {
+    private IEnumerable<Vertex> GetNeighbours(Vertex source, int minStepsInDirection, int maxStepsInDirection) {
         var directions = new Direction[] { source.Direction, (Direction)(((int)source.Direction + 1) % 4), (Direction)(((int)source.Direction + 3) % 4) };
         foreach (var direction in directions) {
             var canMove = TryMove(source, direction, out var target);
-            if (canMove && target.StepsInDirection <= maxStepsInDirection)
-                yield return target;
+            if (canMove) {
+                if (target.StepsInDirection >= minStepsInDirection && target.StepsInDirection <= maxStepsInDirection)
+                    yield return target;
+                else if (target.StepsInDirection < minStepsInDirection) {
+                    while (TryMove(target, direction, out var tempTarget) && tempTarget.StepsInDirection <= minStepsInDirection)
+                        target = tempTarget with { HeatLoss = target.HeatLoss + tempTarget.HeatLoss };
+                    if (target.StepsInDirection == minStepsInDirection)
+                        yield return target;
+                }
+            }
         }
     }
 
@@ -109,7 +116,7 @@ public class Day_17 : BaseDay
         return true;
     }
 
-    private static (Dictionary<Vertex, int>, Dictionary<Vertex, Vertex>) Dijkstra(Func<Vertex,IEnumerable<Vertex>> fGetNeighbours, Vertex source, Vertex target) {
+    private static (Dictionary<Vertex, int>, Dictionary<Vertex, Vertex>) Dijkstra(Func<Vertex,IEnumerable<Vertex>> fGetNeighbours, Vertex source) {
         var dist = new Dictionary<Vertex, int>();
         var prev = new Dictionary<Vertex,Vertex>();
         dist.Add(source, 0);
@@ -119,8 +126,6 @@ public class Day_17 : BaseDay
 
         while (Q.Count != 0) {
             Q.TryDequeue(out var u, out var p);
-            if (u.X == target.X && u.Y == target.Y)
-                break;
             if (p != dist[u])
                 continue;
 
@@ -144,9 +149,10 @@ public class Day_17 : BaseDay
         return (dist, prev);
     }
 
-    private static IList<Vertex> GetShortestPath(Dictionary<Vertex, Vertex> prev, Vertex source, Vertex target) {
+    private static IList<Vertex> GetShortestPath(Dictionary<Vertex, Vertex> prev, Dictionary<Vertex, int> dist, Vertex target) {
         var S = new Stack<Vertex>();
-        var u = prev.First(kvp => kvp.Key.X == target.X && kvp.Key.Y == target.Y).Key;
+        var targets = prev.Where(kvp => kvp.Key.X == target.X && kvp.Key.Y == target.Y).Select(kvp => kvp.Key);
+        var u = targets.Aggregate((v1, v2) => dist[v1] < dist[v2] ? v1 : v2);
 
         S.Push(u);
         while (prev.TryGetValue(u, out u)) {
