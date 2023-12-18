@@ -1,14 +1,16 @@
-﻿namespace AdventOfCode;
+﻿using System.Globalization;
+
+namespace AdventOfCode;
 
 public class Day_18 : BaseDay
 {
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
     record Coordinate(int X, int Y);
 
-    public int Solution_1() {
+    public long Solution_1() {
         static (char, int) fGetDirAndLength(string line)
         {
             var splitted = line.Split(' ');
@@ -16,58 +18,74 @@ public class Day_18 : BaseDay
             var length = int.Parse(splitted[1]);
             return (direction, length);
         }
+        return Solve(fGetDirAndLength);
+    }
 
+    public long Solution_2() {
+        static (char, int) fGetDirAndLength(string line) {
+            var splitted = line.Split(' ');
+            var hex = splitted[2][2..^1];
+            var length = int.Parse(hex[..5], NumberStyles.HexNumber);
+            var direction = hex[^1] switch {
+                '0' => 'R',
+                '1' => 'D',
+                '2' => 'L',
+                '3' => 'U',
+                _ => throw new SolvingException(),
+            };
+            return (direction, length);
+        }
+        List<Coordinate> test = [new(0,0), new(3,0), new (3,3), new (0, 3)];
+        Console.WriteLine($"{CalculateAreaOfSimplePolygon(test)} {Perimeter(test)}");
+        return Solve(fGetDirAndLength);
+    }
+
+    private long Solve(Func<string, (char, int)> fGetDirAndLength) {
         var polygon = CreatePolygon(File.ReadLines(InputFilePath), fGetDirAndLength);
-        var ((min_x, min_y), (max_x, max_y)) = polygon.BoundingBox;
-        var grid = new bool[max_y - min_y + 1, max_x - min_x + 1];
-        for (int i = 0; i < polygon.Points.Count; i++) {
-            var (from_x, from_y) = polygon.Points[i];
-            var (to_x, to_y) = polygon.Points[(i + 1) % polygon.Points.Count];
-            if (from_x > to_x)
-                Swap(ref from_x, ref to_x);
-            if (from_y > to_y)
-                Swap(ref from_y, ref to_y);
-            if (from_x == to_x) {
-                for (int y = from_y - min_y; y <= to_y - min_y; y++)
-                    grid[y, from_x - min_x] = true;
-            }
-            else {
-                for (int x = from_x - min_x; x <= to_x - min_x; x++)
-                    grid[from_y - min_y, x] = true;
-            }
+        var A = CalculateAreaOfSimplePolygon(polygon.Points);
+        var P = Perimeter(polygon.Points);
+
+        /* Let's take a simple polygon of 4x4 square for the trench. Coordinates will be (0,0) (3,0), (3,3), (0, 3)
+         * ####
+         * #..#
+         * #..#
+         * ####
+         * We calculate A as being 9, meaning it is a 3x3 square. If you put this 3x3 square in the middle of the above diagram, 
+         * you need to take part of the area of the trench. For cells where the trench is moving straight, this is 1/2 of the area.
+         * For all corners in the example, you lose 1/4. We divide P by 2 averaging each cell to missing 1/2, so we need to make up for the corners.
+         * All corners need to be accounted for with 3/4 of the cell. We only accounted for 1/2, so we need to add 4 * 1/4.
+         * In more complex polygons you will also have concave corners losing more space (3/4), so we should substract 1/4 for every such corner.
+         * Since convex and concave corners average each other out to the 1/2 loss we alreadye accounted for, we're only interested in the difference between these two types of corners.
+         * To close the loop of the polygon, you will always have 4 more convex corners then concave, thus we miss 4 * 1/4 (= + 1) perimeter space after performing P / 2.
+         * Thus, Result = A + (P / 2) + 1
+         */
+        return A + (P / 2) + 1;
+    }
+
+    // From https://en.wikipedia.org/wiki/Polygon#Simple_polygons
+    private static long CalculateAreaOfSimplePolygon(IList<Coordinate> points) {
+        var sum = 0L;
+        var n = points.Count;
+        for (int i = 0; i < n; i++) {
+            var currentPoint = points[i];
+            var nextPoint = points[(i + 1) % n];
+            sum += (long)currentPoint.X * nextPoint.Y - (long)nextPoint.X * currentPoint.Y;
         }
 
-        var rows = grid.GetLength(0);
-        var columns = grid.GetLength(1);
+        return sum / 2;
+    }
 
-        var area = 0;
-        for (int y = 0; y < rows; y++) {
-            bool? wasPreviousCrossUp = null;
-            bool inside = false;
-            for (int x = 0; x < columns; x++) {
-                if (grid[y, x]) {
-                    var up = GetValue(grid, x, y - 1);
-                    var down = GetValue(grid, x, y - 1);
-                    if (!up && !down) {
-                        ++area;
-                        continue;
-                    }
+    private static int Distance(Coordinate a, Coordinate b) {
+        return a.X == b.X
+            ? Math.Abs(b.Y - a.Y)
+            : Math.Abs(b.X - a.X);
+    }
 
-                    if ( // Similar to Day 10
-                        wasPreviousCrossUp == null ||
-                        wasPreviousCrossUp.Value && down ||
-                        !wasPreviousCrossUp.Value && up
-                    ) {
-                        inside = !inside;
-                        wasPreviousCrossUp = up;
-                    }
-                }
-                if (inside || grid[y, x])
-                    ++area;
-            }
-        }
-
-        return area;
+    private static int Perimeter(IList<Coordinate> points) {
+        var result = 0;
+        for (int i = 0; i < points.Count; i++)
+            result += Distance(points[i], points[(i + 1) % points.Count]);
+        return result;
     }
 
     record BoundingBox(Coordinate Min, Coordinate Max);
@@ -97,19 +115,5 @@ public class Day_18 : BaseDay
         }
 
         return new(points, new(new(min_x, min_y), new(max_x, max_y)));
-    }
-
-    private static void Swap(ref int a, ref int b) {
-        a += b;
-        b = a - b;
-        a -= b;
-    }
-
-    private static bool GetValue(bool[,] grid, int x, int y) {
-        var rows = grid.GetLength(0);
-        var columns = grid.GetLength(1);
-        if (x < 0 || y < 0 || x >= columns || y >= rows)
-            return false;
-        return grid[y, x];
     }
 }
