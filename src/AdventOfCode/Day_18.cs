@@ -9,35 +9,20 @@ public class Day_18 : BaseDay
     record Coordinate(int X, int Y);
 
     public int Solution_1() {
-        var polygon = new List<Coordinate>();
-
-        var previousCorner = new Coordinate(0,0); // Not added to polygon yet, will happen at last instruction.
-        int min_x = int.MaxValue, min_y = int.MaxValue, max_x = 0, max_y = 0;
-        foreach (var instruction in File.ReadLines(InputFilePath)) {
-            var splitted = instruction.Split(' ');
+        static (char, int) fGetDirAndLength(string line)
+        {
+            var splitted = line.Split(' ');
             var direction = splitted[0][0];
             var length = int.Parse(splitted[1]);
-            var color = int.Parse(splitted[2][2..^1], System.Globalization.NumberStyles.HexNumber);
-
-            var nextCorner = direction switch {
-                'U' => previousCorner with { Y = previousCorner.Y - length },
-                'R' => previousCorner with { X = previousCorner.X + length },
-                'D' => previousCorner with { Y = previousCorner.Y + length },
-                'L' => previousCorner with { X = previousCorner.X - length },
-                _ => throw new SolvingException(),
-            };
-            polygon.Add(nextCorner);
-            previousCorner = nextCorner;
-            min_x = nextCorner.X < min_x ? nextCorner.X : min_x;
-            min_y = nextCorner.Y < min_y ? nextCorner.Y : min_y;
-            max_x = nextCorner.X > max_x ? nextCorner.X : max_x;
-            max_y = nextCorner.Y > max_y ? nextCorner.Y : max_y;
+            return (direction, length);
         }
 
+        var polygon = CreatePolygon(File.ReadLines(InputFilePath), fGetDirAndLength);
+        var ((min_x, min_y), (max_x, max_y)) = polygon.BoundingBox;
         var grid = new bool[max_y - min_y + 1, max_x - min_x + 1];
-        for (int i = 0; i < polygon.Count; i++) {
-            var (from_x, from_y) = polygon[i];
-            var (to_x, to_y) = polygon[(i + 1) % polygon.Count];
+        for (int i = 0; i < polygon.Points.Count; i++) {
+            var (from_x, from_y) = polygon.Points[i];
+            var (to_x, to_y) = polygon.Points[(i + 1) % polygon.Points.Count];
             if (from_x > to_x)
                 Swap(ref from_x, ref to_x);
             if (from_y > to_y)
@@ -83,6 +68,35 @@ public class Day_18 : BaseDay
         }
 
         return area;
+    }
+
+    record BoundingBox(Coordinate Min, Coordinate Max);
+    record Polygon(IList<Coordinate> Points, BoundingBox BoundingBox);
+
+    private static Polygon CreatePolygon(IEnumerable<string> lines, Func<string, (char, int)> fGetDirAndLength) {
+        var points = new List<Coordinate>();
+
+        var previousCorner = new Coordinate(0,0); // Not added to polygon yet, will happen at last instruction.
+        int min_x = int.MaxValue, min_y = int.MaxValue, max_x = 0, max_y = 0;
+
+        foreach (var instruction in lines) {
+            var (direction, length) = fGetDirAndLength(instruction);
+            var nextCorner = direction switch {
+                'U' => previousCorner with { Y = previousCorner.Y - length },
+                'R' => previousCorner with { X = previousCorner.X + length },
+                'D' => previousCorner with { Y = previousCorner.Y + length },
+                'L' => previousCorner with { X = previousCorner.X - length },
+                _ => throw new SolvingException(),
+            };
+            points.Add(nextCorner);
+            previousCorner = nextCorner;
+            min_x = nextCorner.X < min_x ? nextCorner.X : min_x;
+            min_y = nextCorner.Y < min_y ? nextCorner.Y : min_y;
+            max_x = nextCorner.X > max_x ? nextCorner.X : max_x;
+            max_y = nextCorner.Y > max_y ? nextCorner.Y : max_y;
+        }
+
+        return new(points, new(new(min_x, min_y), new(max_x, max_y)));
     }
 
     private static void Swap(ref int a, ref int b) {
