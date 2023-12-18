@@ -20,6 +20,7 @@ public static class SolutionTests
     [TestCase(typeof(Day_14), "108641", "84328")]
     [TestCase(typeof(Day_15), "512797", "262454")]
     [TestCase(typeof(Day_16), "7060", "7493")]
+    [TestCase(typeof(Day_17), "855", "980")]
     public static async Task Test(Type type, string sol1, string sol2)
     {
         if (Activator.CreateInstance(type) is BaseProblem instance)
