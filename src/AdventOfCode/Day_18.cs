@@ -36,7 +36,6 @@ public class Day_18 : BaseDay
             return (direction, length);
         }
         List<Coordinate> test = [new(0,0), new(3,0), new (3,3), new (0, 3)];
-        Console.WriteLine($"{CalculateAreaOfSimplePolygon(test)} {Perimeter(test)}");
         return Solve(fGetDirAndLength);
     }
 
