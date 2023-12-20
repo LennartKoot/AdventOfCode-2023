@@ -1,12 +1,10 @@
-﻿using Microsoft.VisualBasic;
-
-namespace AdventOfCode;
+﻿namespace AdventOfCode;
 
 public class Day_19 : BaseDay
 {
     public override ValueTask<string> Solve_1() => new($"{Solution_1()}");
 
-    public override ValueTask<string> Solve_2() => new($"Solution 2");
+    public override ValueTask<string> Solve_2() => new($"{Solution_2()}");
 
     public long Solution_1() {
         var (workflows, parts) = Parse();
@@ -30,6 +28,90 @@ public class Day_19 : BaseDay
             return target;
         
         return GetTargetForPart(workflows, part, target);
+    }
+
+    public long Solution_2() {
+        var (workflows, _) = Parse();
+        var map = workflows.ToDictionary(w => w.Name);
+        return FindMaxCombinations(map, new(1, 4000), new(1, 4000), new(1, 4000), new(1, 4000), "in");
+    }
+
+    record Range(int Min, int Max) {
+        public int Size => Max - Min + 1;
+
+        public (Range, Range) Split(int pivot) {
+            return (new(Min, pivot), new(pivot + 1, Max));
+        }
+    }
+
+    private static long FindMaxCombinations(Dictionary<string, Workflow> workflows, Range x, Range m, Range a, Range s, string workflowName) {
+        if (workflowName == "A")
+            return (long)x.Size * m.Size * a.Size * s.Size;
+        if (workflowName == "R")
+            return 0;
+        var workflow = workflows[workflowName];
+        var result = 0L;
+        for (int i = 0; i < workflow.Rules.Count; i++) {
+            var rule = workflow.Rules[i];
+            if (rule is FallbackRule) {
+                result += FindMaxCombinations(workflows, x, m, a, s, rule.Target);
+                continue;
+            }
+            var castedRule = rule as Rule;
+            Range ruleRange;
+            Range newRange;
+            switch (castedRule.Category) {
+                case 'x':
+                    if (!TrySplitOnRule(x, castedRule, out ruleRange, out newRange))
+                        continue;
+                    else {
+                        result += FindMaxCombinations(workflows, ruleRange, m, a, s, rule.Target);
+                        x = newRange;
+                    }
+                    break;
+                case 'm':
+                    if (!TrySplitOnRule(m, castedRule, out ruleRange, out newRange))
+                        continue;
+                    else {
+                        result += FindMaxCombinations(workflows, x, ruleRange, a, s, rule.Target);
+                        m = newRange;
+                    }
+                    break;
+                case 'a':
+                    if (!TrySplitOnRule(a, castedRule, out ruleRange, out newRange))
+                        continue;
+                    else {
+                        result += FindMaxCombinations(workflows, x, m, ruleRange, s, rule.Target);
+                        a = newRange;
+                    }
+                    break;
+                case 's':
+                    if (!TrySplitOnRule(s, castedRule, out ruleRange, out newRange))
+                        continue;
+                    else {
+                        result += FindMaxCombinations(workflows, x, m, a, ruleRange, rule.Target);
+                        s = newRange;
+                    }
+                    break;
+            }
+        }
+
+        return result;
+
+        static bool TrySplitOnRule(Range range, Rule rule, out Range ruleRange, out Range newRange) {
+            ruleRange = null;
+            newRange = null;
+            if (rule.Operation == Operation.LessThan && rule.RHS <= range.Min)
+                return false;
+            if (rule.Operation == Operation.GreaterThan && rule.RHS >= range.Max)
+                return false;
+
+            var pivot = rule.Operation == Operation.LessThan ? rule.RHS - 1 : rule.RHS;
+            var (left, right) = range.Split(pivot);
+            ruleRange = rule.Operation == Operation.LessThan ? left : right;
+            newRange = rule.Operation == Operation.LessThan ? right : left;
+            return true;
+        }
     }
 
     private (ICollection<Workflow>, ICollection<Part>) Parse() {
@@ -80,6 +162,7 @@ public class Day_19 : BaseDay
     }
 
     interface IRule {
+        string Target { get; }
         bool Evaluate(Part part, out string target);
     }
 
