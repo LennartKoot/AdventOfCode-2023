@@ -31,55 +31,83 @@ public class Day_21 : BaseDay
 
     public int Solution_1()
     {
-        HashSet<Position> reached = [_start];
-        for (int i = 0; i < 64; i++)
-        {
-            HashSet<Position> newReached = [];
-            foreach (var pos in reached)
-            {
-                if (GetValue(_grid, pos with { X = pos.X - 1}) != '#')
-                    newReached.Add(pos with { X = pos.X - 1});
-                if (GetValue(_grid, pos with { X = pos.X + 1}) != '#')
-                    newReached.Add(pos with { X = pos.X + 1});
-                if (GetValue(_grid, pos with { Y = pos.Y - 1}) != '#')
-                    newReached.Add(pos with { Y = pos.Y - 1});
-                if (GetValue(_grid, pos with { Y = pos.Y + 1}) != '#')
-                    newReached.Add(pos with { Y = pos.Y + 1});
-            }
-            reached = newReached;
-        }
+        var reached = PerformSteps(64, false);
 
         return reached.Count;
     }
 
-    public int Solution_2()
+    public long Solution_2()
     {
-        HashSet<Position> reached = [_start];
-        for (int i = 0; i < 65; i++)
-        {
-            HashSet<Position> newReached = [];
-            foreach (var pos in reached)
-            {
-                if (GetValue(_grid, pos with { X = pos.X - 1}) != '#')
-                    newReached.Add(pos with { X = pos.X - 1});
-                if (GetValue(_grid, pos with { X = pos.X + 1}) != '#')
-                    newReached.Add(pos with { X = pos.X + 1});
-                if (GetValue(_grid, pos with { Y = pos.Y - 1}) != '#')
-                    newReached.Add(pos with { Y = pos.Y - 1});
-                if (GetValue(_grid, pos with { Y = pos.Y + 1}) != '#')
-                    newReached.Add(pos with { Y = pos.Y + 1});
-            }
-            reached = newReached;
-        }
-
         /* Found pattern growing in a diamond shape, hitting the edges to new gardens in 66 steps
          * which is exactly half the width and height
+         * Space of diamond grows quadratic => find quadratic formula given three points
          */
-        PrintGrid(reached);
-        return reached.Count;
+
+        var gridWidth = _grid.GetLength(1);
+
+        var reached = PerformSteps(gridWidth / 2, true);
+        var y1 = reached.Count;
+
+        reached = PerformSteps(gridWidth, true, reached);
+        var y2 = reached.Count;
+
+        reached = PerformSteps(gridWidth, true, reached);
+        var y3 = reached.Count;
+
+        var (a, b, c) = DetermineQuadraticPolynomial((0, y1), (1, y2), (2, y3)); // Each x is one cycle
+        return (long)CalculateQuadratic(a, b, c, (26501365 - gridWidth / 2) / gridWidth); // Solve for x = cycles needed to get to 26501365
     }
 
-    private static char GetValue(char[,] grid, Position position, bool infiniteMap = false)
+    // From: https://stackoverflow.com/a/717833
+    // Returns coeffecients a,b,c from standard from quadratic formula: y = ax^2 + bx + c
+    private static (double, double, double) DetermineQuadraticPolynomial((int, int) p1, (int, int) p2, (int, int) p3) {
+        var (x1, y1) = p1;
+        var (x2, y2) = p2;
+        var (x3, y3) = p3;
+
+        double denom = (x1 - x2) * (x1 - x3) * (x2 - x3);
+        double a     = (x3 * (y2 - y1) + x2 * (y1 - y3) + x1 * (y3 - y2)) / denom;
+        double b     = (x3*x3 * (y1 - y2) + x2*x2 * (y3 - y1) + x1*x1 * (y2 - y3)) / denom;
+        double c     = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
+
+        return (a, b, c);
+    }
+
+    private static double CalculateQuadratic(double a, double b, double c, double x) {
+        return a * Math.Pow(x, 2) + b * x + c;
+    }
+
+    private HashSet<Position> PerformSteps(int steps, bool infiniteMap, HashSet<Position> reached = null) {
+        reached ??= [_start];
+
+        for (int i = 0; i < steps; i++)
+        {
+            HashSet<Position> newReached = [];
+            foreach (var pos in reached)
+            {
+                var newPos = pos with { X = pos.X - 1};
+                if (GetValue(_grid, newPos, infiniteMap) != '#')
+                    newReached.Add(newPos);
+
+                newPos = pos with { X = pos.X + 1};
+                if (GetValue(_grid, newPos, infiniteMap) != '#')
+                    newReached.Add(newPos);
+
+                newPos = pos with { Y = pos.Y - 1};
+                if (GetValue(_grid, newPos, infiniteMap) != '#')
+                    newReached.Add(newPos);
+
+                newPos = pos with { Y = pos.Y + 1};
+                if (GetValue(_grid, newPos, infiniteMap) != '#')
+                    newReached.Add(newPos);
+            }
+            reached = newReached;
+        }
+
+        return reached;
+    }
+
+    private static char GetValue(char[,] grid, Position position, bool infiniteMap)
     {
         var max_x = grid.GetLength(1) - 1;
         var max_y = grid.GetLength(0) - 1;
